@@ -69,7 +69,7 @@ def login_and_register_page():
     st.title("ログイン / 新規登録")
 
     # Login section
-    name, authentication_status, username = authenticator.login('ログイン', 'main')
+    name, authentication_status, username = authenticator.login()
 
     if authentication_status:
         st.session_state["name"] = name
