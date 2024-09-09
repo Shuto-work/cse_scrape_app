@@ -9,12 +9,13 @@ import os
 
 
 def load_config():
-    if os.path.exists('config.yaml'):
+    if os.path.exists('./.streamlit/config.yaml'):
         # ローカル環境
-        with open('config.yaml') as file:
+        with open('./.streamlit/config.yaml') as file:
             return yaml.load(file, Loader=SafeLoader)
     else:
         # デプロイ環境 (Streamlit Secrets を使用)
+        auth_config = st.secrets.get("authentication", {})
         return {
             'credentials': {
                 'usernames': {
@@ -22,19 +23,19 @@ def load_config():
                         'name': name,
                         'password': password
                     } for username, name, password in zip(
-                        st.secrets["authentication"]["usernames"],
-                        st.secrets["authentication"]["names"],
-                        st.secrets["authentication"]["passwords"]
+                        auth_config.get("usernames", []),
+                        auth_config.get("names", []),
+                        auth_config.get("passwords", [])
                     )
                 }
             },
             'cookie': {
-                'expiry_days': st.secrets["authentication"]["cookie_expiry_days"],
-                'key': st.secrets["authentication"]["cookie_key"],
-                'name': st.secrets["authentication"]["cookie_name"]
+                'expiry_days': auth_config.get("cookie_expiry_days", 30),
+                'key': auth_config.get("cookie_key", "some_signature_key"),
+                'name': auth_config.get("cookie_name", "some_cookie_name")
             },
             'pre-authorized': {
-                'emails': st.secrets["authentication"]["pre_authorized_emails"]
+                'emails': auth_config.get("pre_authorized_emails", [])
             }
         }
 
@@ -53,9 +54,9 @@ authenticator = stauth.Authenticate(
 
 
 def save_config():
-    if os.path.exists('config.yaml'):
+    if os.path.exists('./.streamlit/config.yaml'):
         # ローカル環境
-        with open('config.yaml', 'w') as file:
+        with open('./.streamlit/config.yaml', 'w') as file:
             yaml.dump(config, file, default_flow_style=False)
         st.success("設定が正常に保存されました。")
     else:
@@ -84,7 +85,7 @@ def login_and_register_page():
     st.write("---")
     st.subheader("新規登録")
     try:
-        if authenticator.register_user('新規登録', preauthorization=False):
+        if authenticator.register_user('新規登録', pre_authorization=False):
             st.success('ユーザー登録が完了しました')
             save_config()
     except Exception as e:
