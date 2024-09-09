@@ -85,7 +85,7 @@ def login_and_register_page():
     st.write("---")
     st.subheader("新規登録")
     try:
-        if authenticator.register_user('新規登録', pre_authorization=False):
+        if authenticator.register_user(pre_authorization=False):
             st.success('ユーザー登録が完了しました')
             save_config()
     except Exception as e:
