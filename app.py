@@ -9,29 +9,37 @@ import os
 
 
 def load_config():
-    # Check if we're running on Streamlit Cloud
-    if 'STREAMLIT_SHARING' in os.environ or 'STREAMLIT_APP' in os.environ:
-        # Use Streamlit secrets
-        config = {
+    if os.path.exists('config.yaml'):
+        # ローカル環境
+        with open('config.yaml') as file:
+            return yaml.load(file, Loader=SafeLoader)
+    else:
+        # デプロイ環境 (Streamlit Secrets を使用)
+        return {
             'credentials': {
-                'usernames': st.secrets['credentials']['usernames']
+                'usernames': {
+                    username: {
+                        'name': name,
+                        'password': password
+                    } for username, name, password in zip(
+                        st.secrets["authentication"]["usernames"],
+                        st.secrets["authentication"]["names"],
+                        st.secrets["authentication"]["passwords"]
+                    )
+                }
             },
             'cookie': {
-                'name': st.secrets['cookie']['name'],
-                'key': st.secrets['cookie']['key'],
-                'expiry_days': st.secrets['cookie']['expiry_days']
+                'expiry_days': st.secrets["authentication"]["cookie_expiry_days"],
+                'key': st.secrets["authentication"]["cookie_key"],
+                'name': st.secrets["authentication"]["cookie_name"]
             },
-            'pre-authorized': st.secrets['pre-authorized']
+            'pre-authorized': {
+                'emails': st.secrets["authentication"]["pre_authorized_emails"]
+            }
         }
-    else:
-        # Load from local YAML file
-        with open('./config.yaml') as file:
-            config = yaml.load(file, Loader=SafeLoader)
-
-    return config
 
 
-# Load configuration
+# 設定を読み込む
 config = load_config()
 
 # Initialize authenticator
@@ -40,53 +48,46 @@ authenticator = stauth.Authenticate(
     config['cookie']['name'],
     config['cookie']['key'],
     config['cookie']['expiry_days'],
-    config['pre-authorized']
+    config['pre-authorized']['emails']
 )
 
 
-def login_and_register_page():
-    
-    if 'authentication_status' not in st.session_state:
-        st.session_state['authentication_status'] = None
+def save_config():
+    if os.path.exists('config.yaml'):
+        # ローカル環境
+        with open('config.yaml', 'w') as file:
+            yaml.dump(config, file, default_flow_style=False)
+        st.success("設定が正常に保存されました。")
+    else:
+        # デプロイ環境
+        st.warning("デプロイ環境では設定の自動更新はできません。管理者に連絡して手動で更新してください。")
+        # ここで、新しいユーザー情報をログに記録したり、管理者に通知を送ったりする処理を追加できます
 
-    if st.session_state['authentication_status']:
-        content_page()
-        return
-      
+
+def login_and_register_page():
     st.title("ログイン / 新規登録")
-    
-    with st.expander('ログイン'):
-      name, authentication_status, username = authenticator.login()
-    
-      if authentication_status:
+
+    # Login section
+    name, authentication_status, username = authenticator.login('ログイン', 'main')
+
+    if authentication_status:
         st.session_state["name"] = name
+        st.session_state['username'] = username
         st.session_state['authentication_status'] = True
-        st.rerun()  
-      elif authentication_status == False:
+        content_page()
+    elif authentication_status == False:
         st.error('ユーザー名/パスワードが間違っています')
-      elif authentication_status == None:
+    elif authentication_status == None:
         st.warning('ユーザー名とパスワードを入力してください')
 
-    # # Password reset section
-    # st.write("---")
-    # st.subheader("パスワードをリセット")
-    # try:
-    #   if authenticator.reset_password(None, 'パスワードリセット', 'main'):
-    #     st.success('パスワードがリセットされました')
-    #     save_config()
-    # except Exception as e:
-    #     st.error(f"パスワードリセットエラー: {str(e)}")
-    
     # Registration section
-    # st.write("---")
-    
-    with st.expander('新規登録'):
-      # st.subheader("新規登録")
-      try:
-        if authenticator.register_user():
-            # st.success('ユーザー登録が完了しました')
+    st.write("---")
+    st.subheader("新規登録")
+    try:
+        if authenticator.register_user('新規登録', preauthorization=False):
+            st.success('ユーザー登録が完了しました')
             save_config()
-      except Exception as e:
+    except Exception as e:
         st.error(f"登録エラー: {str(e)}")
 
 def content_page():
