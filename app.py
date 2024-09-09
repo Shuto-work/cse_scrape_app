@@ -7,7 +7,7 @@ import sys
 from yaml.loader import SafeLoader
 
 # Load configuration
-with open('./config.yaml') as file:
+with open('./.streamlit/config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
 
 # Initialize authenticator
@@ -20,13 +20,12 @@ authenticator = stauth.Authenticate(
 )
 
 def save_config():
-    with open('./config.yaml', 'w') as file:
+    with open('./.streamlit/config.yaml', 'w') as file:
         yaml.dump(config, file, default_flow_style=False)
     st.success("設定が正常に保存されました。")
 
 def login_and_register_page():
     
-    # Check if user is already logged in
     if 'authentication_status' not in st.session_state:
         st.session_state['authentication_status'] = None
 
@@ -35,39 +34,46 @@ def login_and_register_page():
         return
       
     st.title("ログイン / 新規登録")
-    name, authentication_status, username = authenticator.login()
     
-    if authentication_status:
+    with st.expander('ログイン'):
+      name, authentication_status, username = authenticator.login()
+    
+      if authentication_status:
         st.session_state["name"] = name
         st.session_state['authentication_status'] = True
-        st.rerun()  # Using st.rerun() instead of st.experimental_rerun()
-    elif authentication_status == False:
+        st.rerun()  
+      elif authentication_status == False:
         st.error('ユーザー名/パスワードが間違っています')
-    elif authentication_status == None:
+      elif authentication_status == None:
         st.warning('ユーザー名とパスワードを入力してください')
 
-    # Password reset section
-    st.write("---")
-    st.subheader("パスワードをリセット")
-    if authenticator.reset_password(username, 'パスワードリセット', 'main'):
-        st.success('パスワードがリセットされました')
-        save_config()
-
+    # # Password reset section
+    # st.write("---")
+    # st.subheader("パスワードをリセット")
+    # try:
+    #   if authenticator.reset_password(None, 'パスワードリセット', 'main'):
+    #     st.success('パスワードがリセットされました')
+    #     save_config()
+    # except Exception as e:
+    #     st.error(f"パスワードリセットエラー: {str(e)}")
+    
     # Registration section
-    st.write("---")
-    st.subheader("新規登録")
-    try:
-        if authenticator.register_user('新規登録', pre_authorization=False, location='main'):
-            st.success('ユーザー登録が完了しました')
+    # st.write("---")
+    
+    with st.expander('新規登録'):
+      # st.subheader("新規登録")
+      try:
+        if authenticator.register_user():
+            # st.success('ユーザー登録が完了しました')
             save_config()
-    except Exception as e:
+      except Exception as e:
         st.error(f"登録エラー: {str(e)}")
 
 def content_page():
     st.title('Custom Search APIテスト')
     st.write(f'ようこそ *{st.session_state["name"]}* さん')
     
-    if authenticator.logout('ログアウト', 'main'):
+    if authenticator.logout():
         st.session_state['authentication_status'] = None
         st.success('ログアウトしました')
         st.rerun()  # Using st.rerun() instead of st.experimental_rerun()
