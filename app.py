@@ -5,10 +5,34 @@ import json
 import subprocess
 import sys
 from yaml.loader import SafeLoader
+import os
+
+
+def load_config():
+    # Check if we're running on Streamlit Cloud
+    if 'STREAMLIT_SHARING' in os.environ or 'STREAMLIT_APP' in os.environ:
+        # Use Streamlit secrets
+        config = {
+            'credentials': {
+                'usernames': st.secrets['credentials']['usernames']
+            },
+            'cookie': {
+                'name': st.secrets['cookie']['name'],
+                'key': st.secrets['cookie']['key'],
+                'expiry_days': st.secrets['cookie']['expiry_days']
+            },
+            'pre-authorized': st.secrets['pre-authorized']
+        }
+    else:
+        # Load from local YAML file
+        with open('./config.yaml') as file:
+            config = yaml.load(file, Loader=SafeLoader)
+
+    return config
+
 
 # Load configuration
-with open('./.streamlit/config.yaml') as file:
-    config = yaml.load(file, Loader=SafeLoader)
+config = load_config()
 
 # Initialize authenticator
 authenticator = stauth.Authenticate(
@@ -19,10 +43,6 @@ authenticator = stauth.Authenticate(
     config['pre-authorized']
 )
 
-def save_config():
-    with open('./.streamlit/config.yaml', 'w') as file:
-        yaml.dump(config, file, default_flow_style=False)
-    st.success("設定が正常に保存されました。")
 
 def login_and_register_page():
     
