@@ -41,3 +41,13 @@ if 'authentication_status' not in st.session_state:
     st.session_state['authentication_status'] = None
 if 'logout' not in st.session_state:
     st.session_state['logout'] = False
+    
+def save_config():
+    if os.path.exists('./.streamlit/config.yaml'):
+        # ローカル環境
+        with open('./.streamlit/config.yaml', 'w') as file:
+            yaml.dump(config, file, default_flow_style=False)
+        st.success("設定が正常に保存されました。")
+    else:
+        # デプロイ環境
+        st.warning("デプロイ環境では設定の自動更新はできません。管理者に連絡して手動で更新してください。")
