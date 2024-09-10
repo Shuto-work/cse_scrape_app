@@ -1,66 +1,16 @@
 import streamlit as st
-import streamlit_authenticator as stauth
-import os
-import yaml
-from yaml.loader import SafeLoader
 from content import content_page
+from auth import authenticator, config, save_config
 
+def initialize_session_state():
+    if 'authentication_status' not in st.session_state:
+        st.session_state['authentication_status'] = None
+    if 'name' not in st.session_state:
+        st.session_state['name'] = None
 
-def load_config():
-    if os.path.exists('./.streamlit/config.yaml'):
-        # ローカル環境
-        with open('./.streamlit/config.yaml') as file:
-            return yaml.load(file, Loader=SafeLoader)
-    else:
-        # デプロイ環境 (Streamlit Secrets を使用)
-        auth_config = st.secrets.get("authentication", {})
-        return {
-            'credentials': {
-                'usernames': {
-                    username: {
-                        'name': name,
-                        'password': password
-                    } for username, name, password in zip(
-                        auth_config.get("usernames", []),
-                        auth_config.get("names", []),
-                        auth_config.get("passwords", [])
-                    )
-                }
-            },
-            'cookie': {
-                'expiry_days': auth_config.get("cookie_expiry_days", 30),
-                'key': auth_config.get("cookie_key", "some_signature_key"),
-                'name': auth_config.get("cookie_name", "some_cookie_name")
-            },
-            'pre-authorized': {
-                'emails': auth_config.get("pre_authorized_emails", [])
-            }
-        }
-
-config = load_config()
-
-authenticator = stauth.Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days'],
-    config['pre-authorized']['emails']
-)
-
-def save_config():
-    if os.path.exists('./.streamlit/config.yaml'):
-        # ローカル環境
-        with open('./.streamlit/config.yaml', 'w') as file:
-            yaml.dump(config, file, default_flow_style=False)
-        st.success("設定が正常に保存されました。")
-    else:
-        # デプロイ環境
-        st.warning("デプロイ環境では設定の自動更新はできません。管理者に連絡して手動で更新してください。")
-
-authenticator.login('ログイン','main')
-
-def main():
-
+def login_page():
+    authenticator.login(key='login_widget')
+    
     if st.session_state['authentication_status']:
         content_page()
     elif st.session_state['authentication_status'] is False:
@@ -68,8 +18,42 @@ def main():
     elif st.session_state['authentication_status'] is None:
         st.warning('Please enter your username and password')
 
+def register_page():
+    st.subheader("新規登録")
+    
+    try:
+        email_of_registered_user, username_of_registered_user, name_of_registered_user = authenticator.register_user(
+            pre_authorization=False,
+            location='main',
+            fields={
+                'Form name': 'Register user',
+                'Email': 'Email',
+                'Username': 'Username',
+                'Password': 'Password',
+                'Repeat password': 'Repeat password',
+                'Register': 'Register'
+            },
+            captcha=True,
+            key='register_widget'
+        )
+        
+        if email_of_registered_user:
+            st.success('User registered successfully')
+            save_config()
+            st.experimental_rerun()  # リダイレクトしてページを再読み込みする
+
+    except Exception as e:
+        st.error(f'エラー: {e}')
+        save_config()
+
 if __name__ == "__main__":
-    main()
+    initialize_session_state()
+    
+    if st.session_state['authentication_status']:
+        login_page()
+    else:
+        register_page()
+
 
 
 
