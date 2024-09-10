@@ -1,44 +1,33 @@
-import streamlit_authenticator as stauth
 import streamlit as st
-import os
+import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
-import secrets
-
-username = st.secrets['credentials']['usernames']
-name = st.secrets['credentials']['names']
-password = st.secrets['credentials']['passwords']
 
 def load_config():
-    if os.path.exists('./.streamlit/config.yaml'):
-        # ローカル環境
-        with open('./.streamlit/config.yaml') as file:
-            return yaml.load(file, Loader=SafeLoader)
-    else:
-        # デプロイ環境 (Streamlit Secrets を使用)
-        auth_config = st.secrets.get("authentication", {})
-        return {
-            'credentials': {
-                'usernames': {
-                    username: {
-                        'name': name,
-                        'password': password
-                    } for username, name, password in zip(
-                        auth_config.get("usernames", []),
-                        auth_config.get("names", []),
-                        auth_config.get("passwords", [])
-                    )
-                }
-            },
-            'cookie': {
-                'expiry_days': auth_config.get("cookie_expiry_days", 30),
-                'key': auth_config.get("cookie_key", "some_signature_key"),
-                'name': auth_config.get("cookie_name", "some_cookie_name")
-            },
-            'pre-authorized': {
-                'pre-authorized': auth_config.get("pre_authorized", [])
+    # シークレットから設定を読み込む
+    cookie_config = st.secrets["cookie"]
+    credentials = st.secrets["credentials"]
+    
+    config = {
+        'credentials': {
+            'usernames': {
+                username: {
+                    'name': name,
+                    'password': password
+                } for username, name, password in zip(
+                    credentials["usernames"],
+                    credentials["names"],
+                    credentials["passwords"]
+                )
             }
+        },
+        'cookie': {
+            'expiry_days': cookie_config["expiry_days"],
+            'key': cookie_config["key"],
+            'name': cookie_config["name"]
         }
+    }
+    return config
 
 config = load_config()
 
@@ -47,15 +36,13 @@ authenticator = stauth.Authenticate(
     config['cookie']['name'],
     config['cookie']['key'],
     config['cookie']['expiry_days'],
-    config['pre-authorized']
+    None  # pre-authorized引数を削除
 )
 
-def save_config():
-    if os.path.exists('./.streamlit/config.yaml'):
-        # ローカル環境
-        with open('./.streamlit/config.yaml', 'w') as file:
-            yaml.dump(config, file, default_flow_style=False)
-        st.success("設定が正常に保存されました。")
-    else:
-        # デプロイ環境
-        st.warning("デプロイ環境では設定の自動更新はできません。管理者に連絡して手動で更新してください。")
+# セッションステートの初期化
+if 'logout' not in st.session_state:
+    st.session_state['logout'] = False
+
+# def save_config():
+#     # この関数は必要に応じて実装してください
+#     pass

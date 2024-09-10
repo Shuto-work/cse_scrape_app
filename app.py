@@ -26,16 +26,18 @@ def register_page():
         save_config()
 
 def main():
-    # Initialize session state
+    # セッションステートの初期化
     if 'authentication_status' not in st.session_state:
         st.session_state['authentication_status'] = None
+    if 'logout' not in st.session_state:
+        st.session_state['logout'] = False
     
     if st.session_state['authentication_status']:
         content_page()  # ログイン後はコンテンツページを表示
     else:
         login_page() 
         register_page()
-
+        
 if __name__ == "__main__":
     main()
 
