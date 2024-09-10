@@ -56,26 +56,30 @@ authenticator = stauth.Authenticate(
 print(config)
 
 def login_and_register_page():
-
-    # Check if user is already logged in
     if 'authentication_status' not in st.session_state:
         st.session_state['authentication_status'] = None
 
     if st.session_state['authentication_status']:
         content_page()
-        return
+    else:
+        st.title('ログイン')
+        name, authentication_status, username = authenticator.login()
+        
+        if authentication_status:
+            st.session_state['name'] = name
+            st.session_state['username'] = username
+            st.experimental_rerun()
+        elif authentication_status is False:
+            st.error('ユーザー名/パスワードが間違っています')
+        elif authentication_status is None:
+            st.warning('ユーザー名とパスワードを入力してください')
 
-    st.title("ログイン")
-    name, authentication_status, username = authenticator.login()
-
-    if authentication_status:
-        st.session_state["name"] = name
-        st.session_state['authentication_status'] = True
-        st.rerun()  # Using st.rerun() instead of st.experimental_rerun()
-    elif authentication_status == False:
-        st.error('ユーザー名/パスワードが間違っています')
-    elif authentication_status == None:
-        st.warning('ユーザー名とパスワードを入力してください')
+        st.title('新規登録')
+        try:
+            if authenticator.register_user('Register user', preauthorization=False):
+                st.success('ユーザー登録が完了しました')
+        except Exception as e:
+            st.error(e)
 
     # Registration section
     # st.write("---")
@@ -91,12 +95,15 @@ def login_and_register_page():
 def content_page():
     st.title('Custom Search APIテスト')
     st.write(f'ようこそ *{st.session_state["name"]}* さん')
-
-    if authenticator.logout():
-        st.session_state['authentication_status'] = None
+    
+    if 'authentication_status' in st.session_state and st.session_state['authentication_status']:
+      if authenticator.logout():
+        st.session_state['authentication_status'] = False
+        st.session_state['username'] = None
+        st.session_state['name'] = None    
         st.success('ログアウトしました')
-        st.rerun()  # Using st.rerun() instead of st.experimental_rerun()
-
+        st.rerun()  
+        
     st.caption('検索キーワードを入力すると、検索結果から電話番号と社名のリストを取得できます')
 
     with st.form(key="key_word_form"):
@@ -156,5 +163,14 @@ def content_page():
         )
 
 
+def main():
+    if 'authentication_status' not in st.session_state:
+        st.session_state['authentication_status'] = None
+
+    if st.session_state['authentication_status']:
+        content_page()
+    else:
+        login_and_register_page()
+
 if __name__ == "__main__":
-    login_and_register_page()
+    main()
