@@ -2,9 +2,9 @@ import streamlit as st
 from content import content_page
 from auth import authenticator, config, save_config
 
-authenticator.login()
 
 def login_page():
+  authenticator.login()  
   
   if st.session_state['authentication_status']:
     authenticator.logout()
