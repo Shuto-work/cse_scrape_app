@@ -48,22 +48,15 @@ def login_and_register_page():
     elif authentication_status == None:
         st.warning('ユーザー名とパスワードを入力してください')
 
-    # Password reset section
-    st.write("---")
-    st.subheader("パスワードをリセット")
-    if authenticator.reset_password(username, 'パスワードリセット', 'main'):
-        st.success('パスワードがリセットされました')
-        save_config()
-
     # Registration section
-    st.write("---")
-    st.subheader("新規登録")
-    try:
-        if authenticator.register_user('新規登録', pre_authorization=False, location='main'):
-            st.success('ユーザー登録が完了しました')
-            save_config()
-    except Exception as e:
-        st.error(f"登録エラー: {str(e)}")
+    # st.write("---")
+    # st.subheader("新規登録")
+    # try:
+    #     if authenticator.register_user(pre_authorization=False):
+    #         st.success('ユーザー登録が完了しました')
+    #         save_config()
+    # except Exception as e:
+    #     st.error(f"登録エラー: {str(e)}")
 
 
 def content_page():
