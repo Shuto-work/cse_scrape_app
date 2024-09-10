@@ -2,12 +2,18 @@ import streamlit as st
 from content import content_page
 from auth import authenticator, config, save_config
 
+def initialize_session_state():
+    if 'authentication_status' not in st.session_state:
+        st.session_state['authentication_status'] = None
+    if 'name' not in st.session_state:
+        st.session_state['name'] = None
 
 def login_page():
+  initialize_session_state()
+  
   authenticator.login()  
   
   if st.session_state['authentication_status']:
-    authenticator.logout()
     content_page()
     
   elif st.session_state['authentication_status'] is False:
