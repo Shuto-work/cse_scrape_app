@@ -1,6 +1,12 @@
 import streamlit as st
 from content import content_page
 from auth import authenticator, config, save_config
+import streamlit_authenticator as stauth
+import os
+import yaml
+from yaml.loader import SafeLoader
+
+
 
 def load_config():
     if os.path.exists('./.streamlit/config.yaml'):
