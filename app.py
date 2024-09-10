@@ -9,7 +9,7 @@ def login_page():
         content_page()
     else:
 
-        authenticator.login(key='login_widget')
+        authenticator.login()
         if st.session_state['authentication_status'] is False:
             st.error('Username/password is incorrect')
         elif st.session_state['authentication_status'] is None:
