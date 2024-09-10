@@ -7,7 +7,7 @@ import streamlit as st
 def content_page():
     st.title('Custom Search APIテスト')
     st.write(f'ようこそ *{st.session_state["name"]}* さん')
-    authenticator.logout() 
+    # authenticator.logout() 
     st.caption('検索キーワードを入力すると、検索結果から電話番号と社名のリストを取得できます')
   
 
