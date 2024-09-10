@@ -5,11 +5,15 @@ from auth import authenticator, config, save_config
 def login_page():
     if 'authentication_status' not in st.session_state:
         st.session_state['authentication_status'] = None
+    if 'name' not in st.session_state:
+        st.session_state['name'] = None
+
     if st.session_state['authentication_status']:
         authenticator.logout()
         content_page()
     else:
         authenticator.login()
+        
         if st.session_state['authentication_status'] is False:
             st.error('Username/password is incorrect')
         elif st.session_state['authentication_status'] is None:
