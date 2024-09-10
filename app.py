@@ -23,19 +23,19 @@ def load_config():
                         'name': name,
                         'password': password
                     } for username, name, password in zip(
-                        st.secrets["credentials"]["usernames"],
-                        st.secrets["credentials"]["name"],
-                        st.secrets["credentials"]["passwords"]
+                        st.secrets["credentials"].get("usernames",[]),
+                        st.secrets["credentials"].get("name",[]),
+                        st.secrets["credentials"].get("passwords",[]),
                     )
                 }
             },
             'cookie': {
-                'expiry_days': st.secrets["cookie"]["cookie_expiry_days"],
-                'key': st.secrets["cookie"]["cookie_key"],
-                'name': st.secrets["cookie"]["cookie_name"]
+                'expiry_days': st.secrets["cookie"].get("expiry_days", 30),
+                'key': st.secrets["cookie"].get("cookie_key", "default_key"),
+                'name': st.secrets["cookie"].get("cookie_name", "default_cookie_name")
             },
             'pre-authorized': {
-                'emails': st.secrets["pre-authorized"]["pre_authorized_emails"]
+                'emails': st.secrets.get("pre-authorized", {}).get("emails", [])
             }
         }
 
