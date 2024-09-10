@@ -65,7 +65,7 @@ def login_and_register_page():
         content_page()
         return
 
-    st.title("ログイン / 新規登録")
+    st.title("ログイン")
     name, authentication_status, username = authenticator.login()
 
     if authentication_status:
@@ -92,7 +92,7 @@ def content_page():
     st.title('Custom Search APIテスト')
     st.write(f'ようこそ *{st.session_state["name"]}* さん')
 
-    if authenticator.logout('ログアウト', 'main'):
+    if authenticator.logout():
         st.session_state['authentication_status'] = None
         st.success('ログアウトしました')
         st.rerun()  # Using st.rerun() instead of st.experimental_rerun()
@@ -104,7 +104,7 @@ def content_page():
         search_start_page = st.number_input(
             "データ取得開始ページ", step=1, value=1, min_value=1, max_value=10)
         search_end_page = st.number_input(
-            "データ取得終了ページ", step=1, value=1, min_value=1, max_value=10)
+            "データ取得終了ページ", step=1, value=1, min_value=1, max_value=1)
         sort_order = st.selectbox(
             "検索結果の表示順序（Relevance = 関連順, date = 日付順）", ["Relevance", "date"])
         output_csv = st.text_input("出力するCSVファイル名", "CSEスクレイピングリスト.csv")
