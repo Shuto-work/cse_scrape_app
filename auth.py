@@ -32,7 +32,7 @@ def load_config():
                 'name': auth_config.get("cookie_name", "some_cookie_name")
             },
             'pre-authorized': {
-                'emails': auth_config.get("pre_authorized_emails", [])
+                'pre-authorized': auth_config.get("pre_authorized", [])
             }
         }
 
@@ -43,7 +43,7 @@ authenticator = stauth.Authenticate(
     config['cookie']['name'],
     config['cookie']['key'],
     config['cookie']['expiry_days'],
-    config['pre-authorized']['emails']
+    config['pre-authorized']
 )
 
 def save_config():
