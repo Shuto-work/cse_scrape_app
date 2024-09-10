@@ -2,17 +2,15 @@ import streamlit as st
 from content import content_page
 from auth import authenticator, save_config
 
-
 def login_page():
     authenticator.login()
 
-    if st.session_state['authentication_status']:
+    if st.session_state.get('authentication_status'):
         content_page()
-    elif st.session_state['authentication_status'] is False:
+    elif st.session_state.get('authentication_status') is False:
         st.error('Username/password is incorrect')
-    elif st.session_state['authentication_status'] is None:
+    elif st.session_state.get('authentication_status') is None:
         st.warning('Please enter your username and password')
-
 
 def register_page():
     st.subheader("新規登録")
@@ -22,19 +20,21 @@ def register_page():
         if email_of_registered_user:
             st.success('User registered successfully')
             save_config()
-            st.button('ログインページに戻る',onclick=login_page)
+            st.button('ログインページに戻る', on_click=login_page)
     except Exception as e:
         st.error(e)
         save_config()
 
-
 def main():
+    # Initialize session state
+    if 'authentication_status' not in st.session_state:
+        st.session_state['authentication_status'] = None
     
     if st.session_state['authentication_status']:
         content_page()  # ログイン後はコンテンツページを表示
     else:
-            login_page() 
-            register_page()
+        login_page() 
+        register_page()
 
 if __name__ == "__main__":
     main()
