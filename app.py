@@ -57,10 +57,10 @@ def save_config():
         # デプロイ環境
         st.warning("デプロイ環境では設定の自動更新はできません。管理者に連絡して手動で更新してください。")
 
+authenticator.login()
 
 def main():
     
-    authenticator.login()
 
     if st.session_state['authentication_status']:
         content_page()
