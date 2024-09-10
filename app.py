@@ -12,7 +12,7 @@ def login_page():
     # 初期化処理
     initialize_session_state()
     
-    authenticator.login(key='login_widget')
+    authenticator.login()
 
     # ログイン後の処理
     if st.session_state['authentication_status']:
