@@ -23,9 +23,9 @@ def load_config():
                         'name': name,
                         'password': password
                     } for username, name, password in zip(
-                        st.secrets["credentials"].get("usernames",[]),
-                        st.secrets["credentials"].get("name",[]),
-                        st.secrets["credentials"].get("passwords",[]),
+                        st.secrets["credentials"].get("usernames", []),
+                        st.secrets["credentials"].get("names", []),  # "name" を "names" に変更
+                        st.secrets["credentials"].get("passwords", [])
                     )
                 }
             },
