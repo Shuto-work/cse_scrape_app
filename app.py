@@ -3,6 +3,8 @@ from content import content_page
 from auth import authenticator, config, save_config
 
 def login_page():
+    if 'authentication_status' not in st.session_state:
+        st.session_state['authentication_status'] = None
     if st.session_state['authentication_status']:
         content_page()
     else:
@@ -13,7 +15,7 @@ def login_page():
         elif st.session_state['authentication_status'] is None:
             st.warning('Please enter your username and password')
 
-        # 新規登録フォーム
+        # 新規登録フォームの表示
         try:
             email_of_registered_user, username_of_registered_user, name_of_registered_user = authenticator.register_user(pre_authorization=False)
             if email_of_registered_user:
