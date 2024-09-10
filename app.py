@@ -5,26 +5,55 @@ import json
 import subprocess
 import sys
 from yaml.loader import SafeLoader
-
-# Load configuration
-with open('./.streamlit/config.yaml') as file:
-    config = yaml.load(file, Loader=SafeLoader)
-
-# Initialize authenticator
-authenticator = stauth.Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days'],
-    config['pre-authorized']
-)
-
+import os
 
 def save_config():
     with open('./.streamlit/config.yaml', 'w') as file:
         yaml.dump(config, file, default_flow_style=False)
     st.success("設定が正常に保存されました。")
 
+
+def load_config():
+    if os.path.exists('config.yaml'):
+        # ローカル環境
+        with open('config.yaml') as file:
+            return yaml.load(file, Loader=SafeLoader)
+    else:
+        # デプロイ環境 (Streamlit Secrets を使用)
+        return {
+            'credentials': {
+                'usernames': {
+                    username: {
+                        'name': name,
+                        'password': password
+                    } for username, name, password in zip(
+                        st.secrets["authentication"]["usernames"],
+                        st.secrets["authentication"]["name"],
+                        st.secrets["authentication"]["passwords"]
+                    )
+                }
+            },
+            'cookie': {
+                'expiry_days': st.secrets["authentication"]["cookie_expiry_days"],
+                'key': st.secrets["authentication"]["cookie_key"],
+                'name': st.secrets["authentication"]["cookie_name"]
+            },
+            'pre-authorized': {
+                'emails': st.secrets["authentication"]["pre_authorized_emails"]
+            }
+        }
+
+# 設定を読み込む
+config = load_config()
+
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days']
+)
+
+save_config()
 
 def login_and_register_page():
 
