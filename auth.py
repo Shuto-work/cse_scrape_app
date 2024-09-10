@@ -1,5 +1,6 @@
 import streamlit as st
 import streamlit_authenticator as stauth
+import os
 
 def load_config():
     config = {
@@ -35,12 +36,6 @@ authenticator = stauth.Authenticate(
     config['cookie']['expiry_days'],
     config['preauthorized']['emails']
 )
-
-# セッションステートの初期化
-if 'authentication_status' not in st.session_state:
-    st.session_state['authentication_status'] = None
-if 'logout' not in st.session_state:
-    st.session_state['logout'] = False
     
 def save_config():
     if os.path.exists('./.streamlit/config.yaml'):
