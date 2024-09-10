@@ -7,7 +7,7 @@ import sys
 from yaml.loader import SafeLoader
 
 # Load configuration
-with open('./config.yaml') as file:
+with open('./.streamlit/config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
 
 # Initialize authenticator
@@ -21,7 +21,7 @@ authenticator = stauth.Authenticate(
 
 
 def save_config():
-    with open('./config.yaml', 'w') as file:
+    with open('./.streamlit/config.yaml', 'w') as file:
         yaml.dump(config, file, default_flow_style=False)
     st.success("設定が正常に保存されました。")
 
