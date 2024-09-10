@@ -12,47 +12,36 @@ def login_page():
     authenticator.login(key='login_widget')
     
     if st.session_state['authentication_status']:
-        content_page()
-    elif st.session_state['authentication_status'] is False:
-        st.error('Username/password is incorrect')
-    elif st.session_state['authentication_status'] is None:
-        st.warning('Please enter your username and password')
+        st.rerun()  # ログイン後は自動的にページをリロードして新しい内容を表示
 
 def register_page():
-    st.subheader("新規登録")
-    
     try:
         email_of_registered_user, username_of_registered_user, name_of_registered_user = authenticator.register_user(
             pre_authorization=False,
-            location='main',
-            fields={
-                'Form name': 'Register user',
-                'Email': 'Email',
-                'Username': 'Username',
-                'Password': 'Password',
-                'Repeat password': 'Repeat password',
-                'Register': 'Register'
-            },
-            captcha=True,
             key='register_widget'
         )
         
         if email_of_registered_user:
             st.success('User registered successfully')
             save_config()
-            st.experimental_rerun()  # リダイレクトしてページを再読み込みする
+            st.experimental_rerun()  # 新規登録後にページをリロードしてログインページを表示
 
     except Exception as e:
         st.error(f'エラー: {e}')
         save_config()
 
-if __name__ == "__main__":
+def main():
     initialize_session_state()
     
     if st.session_state['authentication_status']:
-        login_page()
+        content_page()  # ログイン後はコンテンツページを表示
     else:
-        register_page()
+            login_page() 
+            register_page()
+
+if __name__ == "__main__":
+    main()
+
 
 
 
