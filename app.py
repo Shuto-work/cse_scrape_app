@@ -1,22 +1,18 @@
-import streamlit as st
-import streamlit_authenticator as stauth
-import yaml
-import json
-import subprocess
-import sys
 from yaml.loader import SafeLoader
+import yaml
+import streamlit_authenticator as stauth
+import json
+import sys
+import subprocess
+import streamlit as st
 import os
 
-def save_config():
-    with open('./.streamlit/config.yaml', 'w') as file:
-        yaml.dump(config, file, default_flow_style=False)
-    st.success("設定が正常に保存されました。")
-
+# 環境に応じて設定を読み込む関数
 
 def load_config():
-    if os.path.exists('config.yaml'):
+    if os.path.exists('./.streamlit/config.yaml'):
         # ローカル環境
-        with open('config.yaml') as file:
+        with open('./.streamlit/config.yaml') as file:
             return yaml.load(file, Loader=SafeLoader)
     else:
         # デプロイ環境 (Streamlit Secrets を使用)
@@ -27,19 +23,19 @@ def load_config():
                         'name': name,
                         'password': password
                     } for username, name, password in zip(
-                        st.secrets["credentials"]["usernames"],
-                        st.secrets["credentials"]["names"],
-                        st.secrets["credentials"]["passwords"]
+                        st.secrets["authentication"]["usernames"],
+                        st.secrets["authentication"]["name"],
+                        st.secrets["authentication"]["passwords"]
                     )
                 }
             },
             'cookie': {
-                'expiry_days': st.secrets["cookie"]["expiry_days"],
-                'key': st.secrets["cookie"]["cookie_key"],
-                'name': st.secrets["cookie"]["cookie_name"]
+                'expiry_days': st.secrets["authentication"]["cookie_expiry_days"],
+                'key': st.secrets["authentication"]["cookie_key"],
+                'name': st.secrets["authentication"]["cookie_name"]
             },
             'pre-authorized': {
-                'emails': st.secrets.get("pre-authorized", {}).get("emails", [])
+                'emails': st.secrets["authentication"]["pre_authorized_emails"]
             }
         }
 
@@ -53,65 +49,44 @@ authenticator = stauth.Authenticate(
     config['cookie']['expiry_days']
 )
 
-print(config)
+authenticator.login()
 
-def login_and_register_page():
-    if 'authentication_status' not in st.session_state:
-        st.session_state['authentication_status'] = None
+if st.session_state["authentication_status"]:
+    authenticator.logout()
+    st.write(f'ログインに成功しました。ようこそ**{st.session_state["name"]}**さん！')
 
-    if st.session_state['authentication_status']:
-        content_page()
-    else:
-        st.title('ログイン')
-        name, authentication_status, username = authenticator.login()
-        
-        if authentication_status:
-            st.session_state['name'] = name
-            st.session_state['username'] = username
-            st.experimental_rerun()
-        elif authentication_status is False:
-            st.error('ユーザー名/パスワードが間違っています')
-        elif authentication_status is None:
-            st.warning('ユーザー名とパスワードを入力してください')
-
-        st.title('新規登録')
-        try:
-            if authenticator.register_user('Register user', preauthorization=False):
-                st.success('ユーザー登録が完了しました')
-        except Exception as e:
-            st.error(e)
-
-    # Registration section
-    # st.write("---")
-    # st.subheader("新規登録")
-    # try:
-    #     if authenticator.register_user(pre_authorization=False):
-    #         st.success('ユーザー登録が完了しました')
-    #         save_config()
-    # except Exception as e:
-    #     st.error(f"登録エラー: {str(e)}")
-
-
-def content_page():
-    st.title('Custom Search APIテスト')
-    st.write(f'ようこそ *{st.session_state["name"]}* さん')
-    
-    if 'authentication_status' in st.session_state and st.session_state['authentication_status']:
-      if authenticator.logout():
-        st.session_state['authentication_status'] = False
-        st.session_state['username'] = None
-        st.session_state['name'] = None    
-        st.success('ログアウトしました')
-        st.rerun()  
-        
+    st.title('Custom Search API')
     st.caption('検索キーワードを入力すると、検索結果から電話番号と社名のリストを取得できます')
+
+    with st.expander("留意点"):
+        st.markdown("""
+              1. **検索回数の上限について**:
+              - 無料枠の場合、1日100クエリが上限。1クエリ = 1ページ分の検索結果。1ページ = 10位までの表示。
+              - （例 1）「大阪　090 土木」で検索、取得ページ数が1ページ分 = 1クエリ
+              - （例 2）「大阪　090 土木」で検索、取得ページ数が10ページ分 = 10クエリ
+              - 上限は、日本時間の17時にリセット。※詳細はユーザーマニュアルにて
+              2. **検索ページ数について**:
+              - APIの仕様上、10ページまでが上限。
+              3. **検索結果の表示順について**:
+              - Relevance（関連順）とdate（日付順）から選択可能。
+              - 同じ検索ワードで異なるデータを取得できますが、重複結果もあるため取得量が2倍になるわけではありません。
+              """)
+
+    with st.expander("用語辞典"):
+        st.markdown("""
+              **CSE**:
+              Custom Search Engineの略。Google検索結果のスクレイピングは規約違反になるため、Googleが提供しているAPIサービスのCSEを利用する必要があります。      
+
+              **API**:
+              アプリ同士の連携のこと。今回はCSEとPythonで構成したこちらの画面を連携させています。
+              """)
 
     with st.form(key="key_word_form"):
         key_word = st.text_input("検索キーワード")
         search_start_page = st.number_input(
             "データ取得開始ページ", step=1, value=1, min_value=1, max_value=10)
         search_end_page = st.number_input(
-            "データ取得終了ページ", step=1, value=1, min_value=1, max_value=1)
+            "データ取得終了ページ", step=1, value=1, min_value=1, max_value=10)
         sort_order = st.selectbox(
             "検索結果の表示順序（Relevance = 関連順, date = 日付順）", ["Relevance", "date"])
         output_csv = st.text_input("出力するCSVファイル名", "CSEスクレイピングリスト.csv")
@@ -162,15 +137,7 @@ def content_page():
             mime="text/csv"
         )
 
-
-def main():
-    if 'authentication_status' not in st.session_state:
-        st.session_state['authentication_status'] = None
-
-    if st.session_state['authentication_status']:
-        content_page()
-    else:
-        login_and_register_page()
-
-if __name__ == "__main__":
-    main()
+elif st.session_state["authentication_status"] is False:
+    st.error('ユーザー名/パスワードが登録されていません。このアプリは限定ユーザーのみ利用できます。')
+elif st.session_state["authentication_status"] is None:
+    st.warning('ユーザー名とパスワードを入力してください')
