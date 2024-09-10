@@ -3,7 +3,11 @@ import streamlit as st
 import os
 import yaml
 from yaml.loader import SafeLoader
+import secrets
 
+username = st.secrets['credentials']['usernames']
+name = st.secrets['credentials']['names']
+password = st.secrets['credentials']['passwords']
 
 def load_config():
     if os.path.exists('./.streamlit/config.yaml'):
